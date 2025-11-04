@@ -208,18 +208,34 @@ const sortearPorGenero = () => {
   const homens = dados.filter(p => p.genero === "M");
   const mulheres = dados.filter(p => p.genero === "F");
 
-  // --- Distribuição de cores equilibrada para homens (sem rosa) ---
-  const coresHDistribuidas = [];
-  const qtdPorCorH = Math.floor(homens.length / coresHomem.length);
-  let extrasH = homens.length % coresHomem.length;
-  coresHomem.forEach(c => {
-    for (let i = 0; i < qtdPorCorH; i++) coresHDistribuidas.push(c);
-  });
-  while (extrasH > 0) {
-    coresHDistribuidas.push(coresHomem[Math.floor(Math.random() * coresHomem.length)]);
-    extrasH--;
-  }
+  const distribuirEquilibrado = (lista, coresDisponiveis) => {
+    const qtdPorCor = Math.floor(lista.length / coresDisponiveis.length);
+    let extras = lista.length % coresDisponiveis.length;
+    const distribuidas = [];
 
+    // Garante que cada cor apareça pelo menos qtdPorCor vezes
+    coresDisponiveis.forEach(c => {
+      for (let i = 0; i < qtdPorCor; i++) distribuidas.push(c);
+    });
+
+    // Distribui extras aleatoriamente entre todas as cores
+    while (extras > 0) {
+      distribuidas.push(coresDisponiveis[Math.floor(Math.random() * coresDisponiveis.length)]);
+      extras--;
+    }
+
+    return embaralharArray(distribuidas);
+  };
+
+  const coresHDistribuidas = distribuirEquilibrado(homens, coresHomem);
+  const coresFDistribuidas = distribuirEquilibrado(mulheres, cores);
+
+  const homensFinal = homens.map((p, i) => ({ ...p, cor: coresHDistribuidas[i] }));
+  const mulheresFinal = mulheres.map((p, i) => ({ ...p, cor: coresFDistribuidas[i] }));
+
+  setDados([...homensFinal, ...mulheresFinal]);
+};
+  
   // --- Distribuição de cores equilibrada para mulheres (com rosa) ---
   const coresFDistribuidas = [];
   const qtdPorCorF = Math.floor(mulheres.length / cores.length);
