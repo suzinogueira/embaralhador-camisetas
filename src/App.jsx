@@ -157,7 +157,9 @@ const coresHomem = ["Verde", "Azul", "Amarelo"];
 function App() {
   const [texto, setTexto] = useState("");
   const [dados, setDados] = useState([]);
+  const [ordenarPor, setOrdenarPor] = useState("");
 
+  // --- Parse da lista ---
   const parseDados = () => {
     const linhas = texto.split("\n").filter(l => l.trim() !== "");
     const parsed = linhas.map(linha => {
@@ -169,6 +171,7 @@ function App() {
     setDados(parsed);
   };
 
+  // --- Embaralhar ---
   const embaralharArray = arr => {
     const copy = [...arr];
     for (let i = copy.length - 1; i > 0; i--) {
@@ -178,70 +181,48 @@ function App() {
     return copy;
   };
 
-  const distribuirCores = (lista, coresDisponiveis) => {
-    const qtdPorCor = Math.floor(lista.length / coresDisponiveis.length);
-    let extras = lista.length % coresDisponiveis.length;
-    const coresDistribuidas = [];
-    coresDisponiveis.forEach(c => {
-      for (let i = 0; i < qtdPorCor; i++) coresDistribuidas.push(c);
-    });
-    while (extras > 0) {
-      coresDistribuidas.push(coresDisponiveis[Math.floor(Math.random() * coresDisponiveis.length)]);
-      extras--;
-    }
-    return embaralharArray(coresDistribuidas);
-  };
-
-  const sortearGeral = () => {
-    if (dados.length === 0) return alert("Carregue a lista primeiro!");
-    const coresDistribuidas = distribuirCores(dados, cores);
-    const novosDados = dados.map((p, idx) => ({ ...p, cor: coresDistribuidas[idx] }));
-    setDados(novosDados);
-  };
-
-
-// --- Sorteio por gênero equilibrado ---
-const sortearPorGenero = () => {
-  if (dados.length === 0) return alert("Carregue a lista primeiro!");
-
-  const homens = dados.filter(p => p.genero === "M");
-  const mulheres = dados.filter(p => p.genero === "F");
-
-  // Função interna para distribuir cores de forma equilibrada
+  // --- Distribuir cores equilibradas ---
   const distribuirCoresEquilibradas = (lista, coresDisponiveis) => {
     const qtdPorCor = Math.floor(lista.length / coresDisponiveis.length);
     let extras = lista.length % coresDisponiveis.length;
     const coresDistribuidas = [];
 
-    // Passo 1: cada cor recebe o mínimo
     coresDisponiveis.forEach(c => {
       for (let i = 0; i < qtdPorCor; i++) coresDistribuidas.push(c);
     });
 
-    // Passo 2: distribuir os extras nas primeiras cores
-    for (let i = 0; i < extras; i++) {
-      coresDistribuidas.push(coresDisponiveis[i % coresDisponiveis.length]);
+    // Distribuir extras aleatoriamente
+    while (extras > 0) {
+      coresDistribuidas.push(coresDisponiveis[Math.floor(Math.random() * coresDisponiveis.length)]);
+      extras--;
     }
 
     return embaralharArray(coresDistribuidas);
   };
 
-  // --- Distribuição para homens (sem rosa) ---
-  const coresHDistribuidas = distribuirCoresEquilibradas(homens, coresHomem);
+  // --- Sorteio geral ---
+  const sortearGeral = () => {
+    if (dados.length === 0) return alert("Carregue a lista primeiro!");
+    const coresDistribuidas = distribuirCoresEquilibradas(dados, cores);
+    setDados(dados.map((p, i) => ({ ...p, cor: coresDistribuidas[i] })));
+  };
 
-  // --- Distribuição para mulheres (com rosa) ---
-  // Ordene cores para garantir que rosa esteja entre as primeiras, se houver extras
-  const coresMulheresOrdenadas = ["Rosa", "Verde", "Azul", "Amarelo"];
-  const coresFDistribuidas = distribuirCoresEquilibradas(mulheres, coresMulheresOrdenadas);
+  // --- Sorteio por gênero ---
+  const sortearPorGenero = () => {
+    if (dados.length === 0) return alert("Carregue a lista primeiro!");
+    const homens = dados.filter(p => p.genero === "M");
+    const mulheres = dados.filter(p => p.genero === "F");
 
-  // --- Embaralhar e atribuir cores ---
-  const homensFinal = homens.map((p, i) => ({ ...p, cor: coresHDistribuidas[i] }));
-  const mulheresFinal = mulheres.map((p, i) => ({ ...p, cor: coresFDistribuidas[i] }));
+    const coresH = distribuirCoresEquilibradas(homens, coresHomem);
+    const coresF = distribuirCoresEquilibradas(mulheres, cores);
 
-  setDados([...homensFinal, ...mulheresFinal]);
-};
-  
+    const homensFinal = homens.map((p, i) => ({ ...p, cor: coresH[i] }));
+    const mulheresFinal = mulheres.map((p, i) => ({ ...p, cor: coresF[i] }));
 
+    setDados([...homensFinal, ...mulheresFinal]);
+  };
+
+  // --- Baixar TXT ---
   const baixarTXT = () => {
     if (dados.length === 0) return alert("Não há dados para baixar!");
     const linhas = dados.map(d => `${d.nome} - ${d.modelo} - ${d.tamanho} - ${d.cor}`).join("\n");
@@ -249,20 +230,31 @@ const sortearPorGenero = () => {
     saveAs(blob, "camisetas.txt");
   };
 
+  // --- Baixar Excel ---
   const baixarExcel = () => {
     if (dados.length === 0) return alert("Não há dados para baixar!");
     const ws = XLSX.utils.json_to_sheet(dados.map(d => ({
       Nome: d.nome,
       Modelo: d.modelo,
       Tamanho: d.tamanho,
-      Gênero: d.genero,
       Cor: d.cor
     })));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Camisetas");
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([wbout], { type: "application/octet-stream" });
-    saveAs(blob, "camisetas.xlsx");
+    const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+    saveAs(new Blob([buf], { type: "application/octet-stream" }), "camisetas.xlsx");
+  };
+
+  // --- Ordenar tabela ---
+  const ordenarTabela = coluna => {
+    let novaLista = [...dados];
+    novaLista.sort((a, b) => {
+      if (a[coluna] < b[coluna]) return -1;
+      if (a[coluna] > b[coluna]) return 1;
+      return 0;
+    });
+    setDados(novaLista);
+    setOrdenarPor(coluna);
   };
 
   return (
@@ -285,11 +277,11 @@ const sortearPorGenero = () => {
       <table border="1" cellPadding="5">
         <thead>
           <tr>
-            <th>Nome</th>
-            <th>Modelo</th>
-            <th>Tamanho</th>
-            <th>Gênero</th>
-            <th>Cor</th>
+            {["nome", "modelo", "tamanho", "genero", "cor"].map(col => (
+              <th key={col} onClick={() => ordenarTabela(col)} style={{ cursor: "pointer" }}>
+                {col.toUpperCase()} {ordenarPor === col ? "▼" : ""}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
