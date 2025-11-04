@@ -199,20 +199,48 @@ function App() {
     setDados(novosDados);
   };
 
+
   const sortearPorGenero = () => {
-    if (dados.length === 0) return alert("Carregue a lista primeiro!");
+  if (dados.length === 0) return alert("Carregue a lista primeiro!");
 
-    const homens = dados.filter(p => p.genero === "M");
-    const mulheres = dados.filter(p => p.genero === "F");
+  const homens = dados.filter(p => p.genero === "M");
+  const mulheres = dados.filter(p => p.genero === "F");
 
-    const coresHDistribuidas = distribuirCores(homens, coresHomem);
-    const coresFDistribuidas = distribuirCores(mulheres, cores);
+  const distribuirCoresEquilibradas = (lista, coresDisponiveis) => {
+    const qtdPorCor = Math.floor(lista.length / coresDisponiveis.length);
+    let extras = lista.length % coresDisponiveis.length;
+    const coresDistribuidas = [];
 
-    const homensFinal = homens.map((p, idx) => ({ ...p, cor: coresHDistribuidas[idx] }));
-    const mulheresFinal = mulheres.map((p, idx) => ({ ...p, cor: coresFDistribuidas[idx] }));
+    // Passo 1: cada cor recebe o mínimo
+    coresDisponiveis.forEach(c => {
+      for (let i = 0; i < qtdPorCor; i++) coresDistribuidas.push(c);
+    });
 
-    setDados([...homensFinal, ...mulheresFinal]);
+    // Passo 2: distribuir os extras de forma rotativa
+    let idx = 0;
+    while (extras > 0) {
+      coresDistribuidas.push(coresDisponiveis[idx % coresDisponiveis.length]);
+      idx++;
+      extras--;
+    }
+
+    return embaralharArray(coresDistribuidas);
   };
+
+  const homensFinal = embaralharArray(distribuirCoresEquilibradas(homens, coresHomem)).map((c, i) => ({
+    ...homens[i],
+    cor: c
+  }));
+
+  const mulheresFinal = embaralharArray(distribuirCoresEquilibradas(mulheres, cores)).map((c, i) => ({
+    ...mulheres[i],
+    cor: c
+  }));
+
+  setDados([...homensFinal, ...mulheresFinal]);
+};
+
+  
 
   const baixarTXT = () => {
     if (dados.length === 0) return alert("Não há dados para baixar!");
