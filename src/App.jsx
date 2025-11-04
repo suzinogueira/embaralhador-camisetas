@@ -1,148 +1,147 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { saveAs } from "file-saver";
-import "./App.css";
 
-export default function App() {
-  const [inputText, setInputText] = useState("");
-  const [participants, setParticipants] = useState([]);
-  const [sortOption, setSortOption] = useState("geral"); // "geral" ou "genero"
+const cores = ["Verde", "Azul", "Amarelo", "Rosa"];
+const coresHomem = ["Verde", "Azul", "Amarelo"];
 
-  const cores = ["Verde", "Azul", "Amarelo", "Rosa"];
+function App() {
+  const [texto, setTexto] = useState("");
+  const [dados, setDados] = useState([]);
 
-  const sexoMap = {
-    mulher: "F",
-    feminino: "F",
-    f: "F",
-    m: "M",
-    homem: "M",
-    h: "M",
-    masculino: "M"
+  const parseDados = () => {
+    const linhas = texto.split("\n").filter(l => l.trim() !== "");
+    const parsed = linhas.map(linha => {
+      const partes = linha.split(" - ").map(p => p.trim());
+      const [nome, modelo, tamanho, genero] = partes;
+      return { nome, modelo, tamanho, genero, cor: "" };
+    });
+    setDados(parsed);
   };
 
-  function parseList(text) {
-    return text
-      .split("\n")
-      .map((line) => {
-        if (!line.trim()) return null;
-        const parts = line.split(/-(?=[^ -]+$)/).map((p) => p.trim());
-        if (parts.length < 2) return null;
-        const sexoRaw = parts[parts.length - 1];
-        const resto = parts.slice(0, parts.length - 1).join(" - ");
-        const [nome, modelo, tamanho] = resto.split(" - ").map((p) => p.trim());
-        const sexoPadronizado = sexoMap[sexoRaw.toLowerCase()] || sexoRaw.toUpperCase();
-        return { nome, modelo, tamanho, sexo: sexoPadronizado, cor: "" };
-      })
-      .filter(Boolean);
-  }
-
-  function shuffle(arr) {
-    return arr
-      .map((value) => ({ value, sort: Math.random() }))
-      .sort((a, b) => a.sort - b.sort)
-      .map(({ value }) => value);
-  }
-
-  function generateColorsArray(groupSize, availableColors) {
-    const times = Math.ceil(groupSize / availableColors.length);
-    const arr = [];
-    for (let i = 0; i < times; i++) {
-      arr.push(...shuffle(availableColors));
+  const embaralharArray = (arr) => {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-    return arr.slice(0, groupSize);
-  }
+    return copy;
+  };
 
-  function assignColors(list) {
-    if (sortOption === "geral") {
-      const repeatedColors = generateColorsArray(list.length, cores);
-      return list.map((p, i) => ({ ...p, cor: repeatedColors[i] }));
+  const sortearGeral = () => {
+    const qtd = dados.length;
+    const coresDistribuidas = [];
+    const qtdPorCor = Math.floor(qtd / cores.length);
+    let extras = qtd % cores.length;
+
+    cores.forEach(c => {
+      for (let i = 0; i < qtdPorCor; i++) coresDistribuidas.push(c);
+    });
+    while (extras > 0) {
+      coresDistribuidas.push(cores[Math.floor(Math.random() * cores.length)]);
+      extras--;
     }
 
-    if (sortOption === "genero") {
-      const homens = list.filter((p) => p.sexo === "M");
-      const mulheres = list.filter((p) => p.sexo === "F");
+    const embaralhadas = embaralharArray(coresDistribuidas);
+    const novosDados = dados.map((pessoa, idx) => ({
+      ...pessoa,
+      cor: embaralhadas[idx]
+    }));
+    setDados(novosDados);
+  };
 
-      const coresHomem = cores.filter((c) => c !== "Rosa");
-      const coresHomensFinal = generateColorsArray(homens.length, coresHomem);
-      const coresMulheresFinal = generateColorsArray(mulheres.length, cores);
+  const sortearPorGenero = () => {
+    const qtd = dados.length;
+    const dadosComCores = dados.map(pessoa => ({ ...pessoa, cor: "" }));
 
-      const homensComCores = homens.map((p, i) => ({
-        ...p,
-        cor: coresHomensFinal[i],
-      }));
-      const mulheresComCores = mulheres.map((p, i) => ({
-        ...p,
-        cor: coresMulheresFinal[i],
-      }));
+    // Separar homens e mulheres
+    const homens = dadosComCores.filter(p => p.genero.toUpperCase() === "H" || p.genero.toUpperCase() === "M");
+    const mulheres = dadosComCores.filter(p => p.genero.toUpperCase() === "F" || p.genero.toUpperCase() === "M");
 
-      return shuffle([...mulheresComCores, ...homensComCores]);
+    // Distribuir cores
+    const coresHomemDistribuidas = [];
+    const qtdPorCorHomem = Math.floor(homens.length / coresHomem.length);
+    let extrasH = homens.length % coresHomem.length;
+
+    coresHomem.forEach(c => {
+      for (let i = 0; i < qtdPorCorHomem; i++) coresHomemDistribuidas.push(c);
+    });
+    while (extrasH > 0) {
+      coresHomemDistribuidas.push(coresHomem[Math.floor(Math.random() * coresHomem.length)]);
+      extrasH--;
     }
-  }
 
-  function processList() {
-    const list = parseList(inputText);
-    const coloredList = assignColors(list);
-    setParticipants(coloredList);
-  }
+    const coresMulherDistribuidas = [];
+    const qtdPorCorMulher = Math.floor(mulheres.length / cores.length);
+    let extrasF = mulheres.length % cores.length;
 
-  function downloadCSV() {
-    const header = "Nome,Modelo,Tamanho,Sexo,Cor\n";
-    const rows = participants
-      .map((p) => `${p.nome},${p.modelo},${p.tamanho},${p.sexo},${p.cor}`)
-      .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    cores.forEach(c => {
+      for (let i = 0; i < qtdPorCorMulher; i++) coresMulherDistribuidas.push(c);
+    });
+    while (extrasF > 0) {
+      coresMulherDistribuidas.push(cores[Math.floor(Math.random() * cores.length)]);
+      extrasF--;
+    }
+
+    const homensFinal = embaralharArray(coresHomemDistribuidas).map((c, i) => ({
+      ...homens[i],
+      cor: c
+    }));
+
+    const mulheresFinal = embaralharArray(coresMulherDistribuidas).map((c, i) => ({
+      ...mulheres[i],
+      cor: c
+    }));
+
+    setDados([...homensFinal, ...mulheresFinal]);
+  };
+
+  const baixarCSV = () => {
+    const header = "Nome,Modelo,Tamanho,Genero,Cor\n";
+    const linhas = dados.map(d => `${d.nome},${d.modelo},${d.tamanho},${d.genero},${d.cor}`).join("\n");
+    const blob = new Blob([header + linhas], { type: "text/csv;charset=utf-8" });
     saveAs(blob, "camisetas.csv");
-  }
+  };
 
   return (
-    <div className="App">
-      <h1>Embaralhador de Cores - Confraternização</h1>
-
-      <label>Opção de Sorteio: </label>
-      <select value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
-        <option value="geral">Sorteio Geral</option>
-        <option value="genero">Sorteio por Gênero</option>
-      </select>
-
-      <br />
-      <br />
-
+    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+      <h1>Embaralhador de Camisetas</h1>
       <textarea
-        rows={12}
+        rows={10}
         cols={50}
-        placeholder="Cole a lista aqui: Nome - Modelo - Tamanho - Sexo (F/M)"
-        value={inputText}
-        onChange={(e) => setInputText(e.target.value)}
+        placeholder="Cole a lista aqui (Nome - Modelo - Tamanho - F/M)"
+        value={texto}
+        onChange={e => setTexto(e.target.value)}
       />
-      <br />
-      <button onClick={processList}>Embaralhar Cores</button>
-      <button onClick={downloadCSV} style={{ marginLeft: "10px" }}>
-        Baixar CSV
-      </button>
-
-      {participants.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Modelo</th>
-              <th>Tamanho</th>
-              <th>Sexo</th>
-              <th>Cor</th>
+      <br /><br />
+      <button onClick={parseDados}>Carregar Lista</button>
+      <button onClick={sortearGeral}>Sortear Geral</button>
+      <button onClick={sortearPorGenero}>Sortear por Gênero</button>
+      <button onClick={baixarCSV}>Baixar CSV</button>
+      <br /><br />
+      <table border="1" cellPadding="5">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Modelo</th>
+            <th>Tamanho</th>
+            <th>Gênero</th>
+            <th>Cor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {dados.map((p, idx) => (
+            <tr key={idx}>
+              <td>{p.nome}</td>
+              <td>{p.modelo}</td>
+              <td>{p.tamanho}</td>
+              <td>{p.genero}</td>
+              <td>{p.cor}</td>
             </tr>
-          </thead>
-          <tbody>
-            {participants.map((p, index) => (
-              <tr key={index} style={{ backgroundColor: p.cor.toLowerCase() }}>
-                <td>{p.nome}</td>
-                <td>{p.modelo}</td>
-                <td>{p.tamanho}</td>
-                <td>{p.sexo}</td>
-                <td>{p.cor}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
+
+export default App;
