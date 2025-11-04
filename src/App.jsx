@@ -156,18 +156,16 @@ function App() {
   const [texto, setTexto] = useState("");
   const [dados, setDados] = useState([]);
 
-  // Parse da lista de entrada
   const parseDados = () => {
     const linhas = texto.split("\n").filter(l => l.trim() !== "");
     const parsed = linhas.map(linha => {
       const partes = linha.split(" - ").map(p => p.trim());
       const [nome, modelo, tamanho, genero] = partes;
-      return { nome, modelo, tamanho, genero, cor: "" };
+      return { nome, modelo, tamanho, genero: genero.toUpperCase(), cor: "" };
     });
     setDados(parsed);
   };
 
-  // Função de embaralhar array
   const embaralharArray = (arr) => {
     const copy = [...arr];
     for (let i = copy.length - 1; i > 0; i--) {
@@ -177,13 +175,12 @@ function App() {
     return copy;
   };
 
-  // Sorteio Geral (todas as cores equilibradas)
   const sortearGeral = () => {
     const qtd = dados.length;
+    const coresDistribuidas = [];
     const qtdPorCor = Math.floor(qtd / cores.length);
     let extras = qtd % cores.length;
 
-    const coresDistribuidas = [];
     cores.forEach(c => {
       for (let i = 0; i < qtdPorCor; i++) coresDistribuidas.push(c);
     });
@@ -200,12 +197,11 @@ function App() {
     setDados(novosDados);
   };
 
-  // Sorteio por Gênero (homens sem rosa)
   const sortearPorGenero = () => {
-    const homens = dados.filter(p => p.genero.toUpperCase() === "H" || p.genero.toUpperCase() === "M");
-    const mulheres = dados.filter(p => p.genero.toUpperCase() === "F" || p.genero.toUpperCase() === "M");
+    const homens = dados.filter(p => p.genero === "M");
+    const mulheres = dados.filter(p => p.genero === "F");
 
-    // Homens
+    // --- Homens ---
     const qtdPorCorH = Math.floor(homens.length / coresHomem.length);
     let extrasH = homens.length % coresHomem.length;
     const coresHDistribuidas = [];
@@ -217,7 +213,7 @@ function App() {
       extrasH--;
     }
 
-    // Mulheres
+    // --- Mulheres ---
     const qtdPorCorF = Math.floor(mulheres.length / cores.length);
     let extrasF = mulheres.length % cores.length;
     const coresFDistribuidas = [];
@@ -233,6 +229,7 @@ function App() {
       ...homens[i],
       cor: c
     }));
+
     const mulheresFinal = embaralharArray(coresFDistribuidas).map((c, i) => ({
       ...mulheres[i],
       cor: c
@@ -241,7 +238,6 @@ function App() {
     setDados([...homensFinal, ...mulheresFinal]);
   };
 
-  // Baixar TXT
   const baixarTXT = () => {
     const linhas = dados.map(d => `${d.nome} - ${d.modelo} - ${d.tamanho} - ${d.cor}`).join("\n");
     const blob = new Blob([linhas], { type: "text/plain;charset=utf-8" });
@@ -282,9 +278,10 @@ function App() {
               <td>{p.tamanho}</td>
               <td>{p.genero}</td>
               <td style={{
-                width: "20px",
-                height: "20px",
-                backgroundColor: p.cor.toLowerCase() || "transparent",
+                width: "30px",
+                height: "30px",
+                backgroundColor: p.cor.trim().toLowerCase() || "transparent",
+                border: "1px solid #000",
                 textAlign: "center"
               }}>
                 {p.cor}
