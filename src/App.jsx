@@ -146,8 +146,10 @@ function App() {
 
 export default App;
 */
+
 import React, { useState } from "react";
 import { saveAs } from "file-saver";
+import { DataGrid } from '@mui/x-data-grid';
 
 const cores = ["Verde", "Azul", "Amarelo", "Rosa"];
 const coresHomem = ["Verde", "Azul", "Amarelo"];
@@ -156,19 +158,19 @@ function App() {
   const [texto, setTexto] = useState("");
   const [dados, setDados] = useState([]);
 
-  // --- Parse da lista ---
   const parseDados = () => {
     const linhas = texto.split("\n").filter(l => l.trim() !== "");
-    const parsed = linhas.map(linha => {
-      const partes = linha.split(" - ").map(p => p.trim());
-      if (partes.length < 4) return null; // ignora linhas incompletas
-      const [nome, modelo, tamanho, genero] = partes;
-      return { nome, modelo, tamanho, genero: genero.toUpperCase(), cor: "" };
-    }).filter(Boolean);
+    const parsed = linhas
+      .map(linha => {
+        const partes = linha.split(" - ").map(p => p.trim());
+        if (partes.length < 4) return null;
+        const [nome, modelo, tamanho, genero] = partes;
+        return { id: Math.random(), nome, modelo, tamanho, genero: genero.toUpperCase(), cor: "" };
+      })
+      .filter(Boolean);
     setDados(parsed);
   };
 
-  // --- Função de embaralhar ---
   const embaralharArray = arr => {
     const copy = [...arr];
     for (let i = copy.length - 1; i > 0; i--) {
@@ -178,36 +180,29 @@ function App() {
     return copy;
   };
 
-  // --- Distribuição equilibrada de cores ---
   const distribuirCores = (lista, coresDisponiveis) => {
-    const qtdPorCor = Math.floor(lista.length / coresDisponiveis.length);
-    let extras = lista.length % coresDisponiveis.length;
+    const qtdTotal = lista.length;
+    const nCores = coresDisponiveis.length;
+    const base = Math.floor(qtdTotal / nCores);
+    let extras = qtdTotal % nCores;
+
     const coresDistribuidas = [];
-
     coresDisponiveis.forEach(c => {
-      for (let i = 0; i < qtdPorCor; i++) coresDistribuidas.push(c);
+      for (let i = 0; i < base; i++) coresDistribuidas.push(c);
     });
-
-    while (extras > 0) {
-      coresDistribuidas.push(coresDisponiveis[Math.floor(Math.random() * coresDisponiveis.length)]);
-      extras--;
-    }
+    for (let i = 0; i < extras; i++) coresDistribuidas.push(coresDisponiveis[i % nCores]);
 
     return embaralharArray(coresDistribuidas);
   };
 
-  // --- Sorteio geral ---
   const sortearGeral = () => {
-    if (dados.length === 0) return alert("Carregue a lista primeiro!");
+    if (!dados.length) return alert("Carregue a lista primeiro!");
     const coresDistribuidas = distribuirCores(dados, cores);
-    const novosDados = dados.map((p, idx) => ({ ...p, cor: coresDistribuidas[idx] }));
-    setDados(novosDados);
+    setDados(dados.map((p, i) => ({ ...p, cor: coresDistribuidas[i] })));
   };
 
-  // --- Sorteio por gênero ---
   const sortearPorGenero = () => {
-    if (dados.length === 0) return alert("Carregue a lista primeiro!");
-
+    if (!dados.length) return alert("Carregue a lista primeiro!");
     const homens = dados.filter(p => p.genero === "M");
     const mulheres = dados.filter(p => p.genero === "F");
 
@@ -220,16 +215,41 @@ function App() {
     setDados([...homensFinal, ...mulheresFinal]);
   };
 
-  // --- Baixar TXT ---
   const baixarTXT = () => {
-    if (dados.length === 0) return alert("Não há dados para baixar!");
+    if (!dados.length) return alert("Não há dados para baixar!");
     const linhas = dados.map(d => `${d.nome} - ${d.modelo} - ${d.tamanho} - ${d.cor}`).join("\n");
-    const blob = new Blob([linhas], { type: "text/plain;charset=utf-8" });
-    saveAs(blob, "camisetas.txt");
+    saveAs(new Blob([linhas], { type: "text/plain;charset=utf-8" }), "camisetas.txt");
   };
 
+  // --- Colunas para DataGrid ---
+  const columns = [
+    { field: 'nome', headerName: 'Nome', flex: 1 },
+    { field: 'modelo', headerName: 'Modelo', flex: 1 },
+    { field: 'tamanho', headerName: 'Tamanho', flex: 1 },
+    { field: 'genero', headerName: 'Gênero', flex: 1 },
+    {
+      field: 'cor',
+      headerName: 'Cor',
+      flex: 1,
+      renderCell: (params) => (
+        <div style={{
+          width: "100%",
+          height: "100%",
+          backgroundColor: params.value.toLowerCase(),
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#fff",
+          fontWeight: "bold"
+        }}>
+          {params.value}
+        </div>
+      )
+    },
+  ];
+
   return (
-    <div style={{ padding: "20px", fontFamily: "Arial" }}>
+    <div style={{ padding: 20 }}>
       <h1>Embaralhador de Camisetas</h1>
       <textarea
         rows={10}
@@ -244,40 +264,17 @@ function App() {
       <button onClick={sortearPorGenero}>Sortear por Gênero</button>
       <button onClick={baixarTXT}>Baixar TXT</button>
       <br /><br />
-      <table border="1" cellPadding="5">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Modelo</th>
-            <th>Tamanho</th>
-            <th>Gênero</th>
-            <th>Cor</th>
-          </tr>
-        </thead>
-        <tbody>
-          {dados.map((p, idx) => (
-            <tr key={idx}>
-              <td>{p.nome}</td>
-              <td>{p.modelo}</td>
-              <td>{p.tamanho}</td>
-              <td>{p.genero}</td>
-              <td style={{
-                width: "30px",
-                height: "30px",
-                backgroundColor: p.cor ? p.cor.toLowerCase() : "transparent",
-                border: "1px solid #000",
-                textAlign: "center"
-              }}>
-                {p.cor}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div style={{ height: 500, width: '100%' }}>
+        <DataGrid
+          rows={dados}
+          columns={columns}
+          pageSize={10}
+          rowsPerPageOptions={[10]}
+          disableSelectionOnClick
+        />
+      </div>
     </div>
   );
 }
 
 export default App;
-
-
