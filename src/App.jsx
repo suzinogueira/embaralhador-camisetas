@@ -152,6 +152,15 @@ import { saveAs } from "file-saver";
 const cores = ["Verde", "Azul", "Amarelo", "Rosa"];
 const coresHomem = ["Verde", "Azul", "Amarelo"];
 
+function embaralharArray(arr) {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
 function App() {
   const [texto, setTexto] = useState("");
   const [dados, setDados] = useState([]);
@@ -166,27 +175,15 @@ function App() {
     setDados(parsed);
   };
 
-  const embaralharArray = (arr) => {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-  };
-
   const sortearGeral = () => {
-    if (dados.length === 0) return;
     const qtd = dados.length;
     const coresDistribuidas = [];
-
     const qtdPorCor = Math.floor(qtd / cores.length);
     let extras = qtd % cores.length;
 
     cores.forEach(c => {
       for (let i = 0; i < qtdPorCor; i++) coresDistribuidas.push(c);
     });
-
     while (extras > 0) {
       coresDistribuidas.push(cores[Math.floor(Math.random() * cores.length)]);
       extras--;
@@ -200,49 +197,38 @@ function App() {
     setDados(novosDados);
   };
 
- const sortearPorGenero = () => {
-  const homens = dados.filter(p => p.genero.toUpperCase() === "H");
-  const mulheres = dados.filter(p => p.genero.toUpperCase() === "M");
+  const sortearPorGenero = () => {
+    const totalPessoas = dados.length;
 
-  const coresTotais = [...cores]; // ['Verde', 'Azul', 'Amarelo', 'Rosa']
+    // criar lista de cores equilibrada globalmente
+    const qtdPorCor = Math.floor(totalPessoas / cores.length);
+    let extras = totalPessoas % cores.length;
 
-  // calcular quantidade de cores proporcional ao total de pessoas
-  const totalPessoas = dados.length;
-  const qtdPorCor = Math.floor(totalPessoas / coresTotais.length);
-  let extras = totalPessoas % coresTotais.length;
+    const listaCores = [];
+    cores.forEach(c => {
+      for (let i = 0; i < qtdPorCor; i++) listaCores.push(c);
+    });
 
-  // criar lista de cores base
-  const listaCores = [];
-  coresTotais.forEach(c => {
-    for (let i = 0; i < qtdPorCor; i++) listaCores.push(c);
-  });
+    const coresExtras = embaralharArray([...cores]);
+    for (let i = 0; i < extras; i++) listaCores.push(coresExtras[i]);
 
-  // distribuir extras aleatoriamente
-  const coresExtras = embaralharArray([...coresTotais]);
-  for (let i = 0; i < extras; i++) {
-    listaCores.push(coresExtras[i]);
-  }
+    const coresEmbaralhadas = embaralharArray(listaCores);
 
-  // embaralhar cores globalmente
-  const coresEmbaralhadas = embaralharArray(listaCores);
+    const novosDados = dados.map(p => {
+      let cor;
+      do {
+        cor = coresEmbaralhadas.pop();
+      } while ((p.genero.toUpperCase() === "H" || p.genero.toUpperCase() === "M") && cor === "Rosa");
+      return { ...p, cor };
+    });
 
-  // atribuir cores respeitando gênero
-  const novosDados = dados.map(p => {
-    let cor;
-    do {
-      cor = coresEmbaralhadas.pop();
-    } while (p.genero.toUpperCase() === "H" && cor === "Rosa"); // homens não podem rosa
-    return { ...p, cor };
-  });
+    setDados(novosDados);
+  };
 
-  setDados(novosDados);
-};
-
-  const baixarCSV = () => {
-    const header = "Nome,Modelo,Tamanho,Genero,Cor\n";
-    const linhas = dados.map(d => `${d.nome},${d.modelo},${d.tamanho},${d.genero},${d.cor}`).join("\n");
-    const blob = new Blob([header + linhas], { type: "text/csv;charset=utf-8" });
-    saveAs(blob, "camisetas.csv");
+  const baixarTXT = () => {
+    const linhas = dados.map(d => `${d.nome} - ${d.modelo} - ${d.tamanho} - ${d.cor}`).join("\n");
+    const blob = new Blob([linhas], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, "camisetas.txt");
   };
 
   return (
@@ -259,7 +245,7 @@ function App() {
       <button onClick={parseDados}>Carregar Lista</button>
       <button onClick={sortearGeral}>Sortear Geral</button>
       <button onClick={sortearPorGenero}>Sortear por Gênero</button>
-      <button onClick={baixarCSV}>Baixar CSV</button>
+      <button onClick={baixarTXT}>Baixar TXT</button>
       <br /><br />
       <table border="1" cellPadding="5">
         <thead>
@@ -278,7 +264,14 @@ function App() {
               <td>{p.modelo}</td>
               <td>{p.tamanho}</td>
               <td>{p.genero}</td>
-              <td>{p.cor}</td>
+              <td>
+                <div style={{
+                  width: "40px",
+                  height: "20px",
+                  backgroundColor: p.cor.toLowerCase(),
+                  border: "1px solid #000"
+                }} title={p.cor}></div>
+              </td>
             </tr>
           ))}
         </tbody>
