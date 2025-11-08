@@ -145,3 +145,52 @@ body {
   
 }
 
+.resumo-cores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.caixa-cor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 10px 15px;
+  min-width: 80px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-weight: 600;
+}
+
+.caixa-cor span {
+  font-size: 14px;
+}
+
+.caixa-cor strong {
+  font-size: 18px;
+}
+
+/* Cores de fundo */
+.caixa-cor.rosa {
+  background-color: #ffb6c1;
+  color: #000;
+}
+
+.caixa-cor.verde {
+  background-color: #9acd32;
+  color: #000;
+}
+
+.caixa-cor.azul {
+  background-color: #87cefa;
+  color: #000;
+}
+
+.caixa-cor.amarelo {
+  background-color: #fff176;
+  color: #000;
+}
+
+
