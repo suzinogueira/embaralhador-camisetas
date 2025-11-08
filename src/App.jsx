@@ -35,27 +35,27 @@ function App() {
     return copy;
   };
 
-  // --- Distribuição equilibrada (corrigida) ---
+  // --- Distribuição equilibrada (nova e precisa) ---
   const distribuirCoresEquilibradas = (totalPessoas, coresDisponiveis) => {
     const listaCores = [];
     const qtdBase = Math.floor(totalPessoas / coresDisponiveis.length);
-    let resto = totalPessoas % coresDisponiveis.length;
+    const resto = totalPessoas % coresDisponiveis.length;
 
+    // adiciona qtdBase de cada cor
     coresDisponiveis.forEach(cor => {
       for (let i = 0; i < qtdBase; i++) listaCores.push(cor);
-      if (resto > 0) {
-        listaCores.push(cor);
-        resto--;
-      }
     });
 
-    // Garante que todas as cores fiquem próximas em quantidade
-    return embaralharArray(listaCores).slice(0, totalPessoas);
+    // adiciona as sobras para as primeiras cores
+    for (let i = 0; i < resto; i++) {
+      listaCores.push(coresDisponiveis[i]);
+    }
+
+    return embaralharArray(listaCores);
   };
 
-  // --- Cor do texto (corrigido) ---
+  // --- Cor do texto ---
   const corTexto = cor => {
-    // Verde e Azul também devem ter texto escuro
     const coresClaras = ["Amarelo", "Rosa", "Verde", "Azul", "Branco"];
     return coresClaras.includes(cor) ? "#000" : "#fff";
   };
@@ -72,7 +72,7 @@ function App() {
     setDados(atualizados);
   };
 
-  // --- Sorteio por gênero (mantendo regras + distribuição justa) ---
+  // --- Sorteio por gênero ---
   const sortearPorGenero = () => {
     if (dados.length === 0) return alert("Carregue a lista primeiro!");
 
@@ -93,7 +93,7 @@ function App() {
       numero: i + 1
     }));
 
-    // Junta tudo e embaralha
+    // junta tudo e embaralha
     const combinado = embaralharArray([...homensFinal, ...mulheresFinal]);
     setDados(combinado);
   };
@@ -102,10 +102,7 @@ function App() {
   const baixarTXT = () => {
     if (dados.length === 0) return alert("Não há dados para baixar!");
     const linhas = dados
-      .map(
-        d =>
-          `${d.nome} - ${d.modelo} - ${d.tamanho} - ${d.genero} - ${d.cor}`
-      )
+      .map(d => `${d.nome} - ${d.modelo} - ${d.tamanho} - ${d.cor}`)
       .join("\n");
     const blob = new Blob([linhas], { type: "text/plain;charset=utf-8" });
     saveAs(blob, "camisetas.txt");
@@ -127,10 +124,7 @@ function App() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Camisetas");
     const buf = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-    saveAs(
-      new Blob([buf], { type: "application/octet-stream" }),
-      "camisetas.xlsx"
-    );
+    saveAs(new Blob([buf], { type: "application/octet-stream" }), "camisetas.xlsx");
   };
 
   // --- Ordenar tabela ---
@@ -144,6 +138,17 @@ function App() {
     setDados(novaLista);
     setOrdenarPor(coluna);
   };
+
+  // --- Contagem de cores ---
+  const contarCores = () => {
+    const contagem = {};
+    cores.forEach(cor => {
+      contagem[cor] = dados.filter(p => p.cor === cor).length;
+    });
+    return contagem;
+  };
+
+  const contagem = contarCores();
 
   return (
     <div className="app-container">
@@ -167,23 +172,25 @@ function App() {
       {dados.length > 0 && (
         <>
           <p>
-            <strong>Total:</strong> {dados.length} pessoas
+            <strong>Total:</strong> {dados.length} pessoas &nbsp; | &nbsp;
+            <span style={{ color: "#e91e63" }}>Rosa: {contagem.Rosa}</span> &nbsp;|&nbsp;
+            <span style={{ color: "#4caf50" }}>Verde: {contagem.Verde}</span> &nbsp;|&nbsp;
+            <span style={{ color: "#2196f3" }}>Azul: {contagem.Azul}</span> &nbsp;|&nbsp;
+            <span style={{ color: "#ffeb3b" }}>Amarelo: {contagem.Amarelo}</span>
           </p>
 
           <table className="tabela">
             <thead>
               <tr>
-                {["numero", "nome", "modelo", "tamanho", "genero", "cor"].map(
-                  col => (
-                    <th
-                      key={col}
-                      onClick={() => ordenarTabela(col)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      {col.toUpperCase()} {ordenarPor === col ? "▼" : ""}
-                    </th>
-                  )
-                )}
+                {["numero", "nome", "modelo", "tamanho", "genero", "cor"].map(col => (
+                  <th
+                    key={col}
+                    onClick={() => ordenarTabela(col)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    {col.toUpperCase()} {ordenarPor === col ? "▼" : ""}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
