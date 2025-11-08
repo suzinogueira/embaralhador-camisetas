@@ -1,127 +1,148 @@
+/* ====== LAYOUT GERAL ====== */
 body {
   margin: 0;
-  font-family: "Poppins", sans-serif;
+  font-family: "Poppins", "Arial", sans-serif;
   background-color: #fff;
   color: #333;
 }
 
 .container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
   text-align: center;
-  padding: 2rem 1rem;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: start;
 }
 
 h1 {
+  margin-bottom: 1rem;
   font-size: 1.8rem;
-  margin-bottom: 1.5rem;
+  color: #222;
 }
 
-.input-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  justify-content: center;
-  margin-bottom: 2rem;
-}
-
-input {
-  width: 200px;
-  padding: 0.6rem 0.8rem;
-  border: 1.5px solid #ccc;
-  border-radius: 12px;
-  font-size: 1rem;
+/* ====== TEXTAREA ====== */
+textarea {
+  width: 100%;
+  max-width: 600px;
+  height: 180px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  font-size: 0.95rem;
+  resize: vertical;
   outline: none;
-  text-align: center;
+  transition: border-color 0.3s;
 }
 
-input:focus {
-  border-color: #666;
+textarea:focus {
+  border-color: #0077cc;
 }
 
+/* ====== BOTÕES ====== */
 button {
-  background-color: #333;
+  background-color: #0077cc;
   color: #fff;
   border: none;
-  border-radius: 12px;
-  padding: 0.8rem 1.6rem;
-  font-size: 1rem;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  margin: 6px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 button:hover {
-  background-color: #555;
+  background-color: #005fa3;
+  transform: translateY(-2px);
 }
 
-.resultado {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.8rem;
+button:active {
+  transform: translateY(0);
+}
+
+/* ====== TABELA ====== */
+table {
+  border-collapse: collapse;
+  margin: 20px auto;
   width: 100%;
-  max-width: 500px;
+  max-width: 800px;
+  font-size: 0.95rem;
+  background-color: #fafafa;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* Blocos das cores */
-.item {
-  border-radius: 12px;
-  padding: 1rem 0;
-  font-weight: bold;
-  font-size: 1rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+th,
+td {
+  padding: 10px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
 }
 
-/* Cores */
-.verde {
-  background-color: #2e8b57;
-  color: #fff;
+th {
+  background-color: #0077cc;
+  color: white;
+  cursor: pointer;
+  user-select: none;
 }
 
-.rosa {
-  background-color: #ff69b4;
-  color: #fff;
+th:hover {
+  background-color: #005fa3;
 }
 
-.amarelo {
-  background-color: #ffd700;
-  color: #333;
+tr:nth-child(even) {
+  background-color: #f4f9ff;
 }
 
-.azul {
-  background-color: #1e90ff;
-  color: #fff;
+/* ====== CORES ====== */
+td[colspan] {
+  background-color: #eee;
 }
 
-/* Responsivo */
-@media (max-width: 600px) {
-  h1 {
-    font-size: 1.5rem;
+td {
+  font-weight: 500;
+}
+
+/* Fundo e contraste ajustados */
+td[style*="verde"] {
+  background-color: #2e8b57 !important;
+  color: #fff !important;
+}
+
+td[style*="azul"] {
+  background-color: #1e90ff !important;
+  color: #fff !important;
+}
+
+td[style*="amarelo"] {
+  background-color: #ffd700 !important;
+  color: #000 !important;
+}
+
+td[style*="rosa"] {
+  background-color: #ff69b4 !important;
+  color: #fff !important;
+}
+
+/* ====== RESPONSIVO ====== */
+@media (max-width: 700px) {
+  table {
+    font-size: 0.85rem;
   }
 
-  .input-group {
-    flex-direction: column;
-    gap: 0.6rem;
+  th,
+  td {
+    padding: 6px;
   }
 
-  input {
-    width: 100%;
-    max-width: 280px;
+  textarea {
+    height: 150px;
   }
 
   button {
+    display: block;
     width: 100%;
     max-width: 280px;
-  }
-
-  .resultado {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 0.6rem;
-  }
-
-  .item {
-    font-size: 0.95rem;
+    margin: 8px auto;
   }
 }
