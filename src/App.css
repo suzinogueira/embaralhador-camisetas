@@ -1,15 +1,127 @@
 body {
-  font-family: Arial, sans-serif;
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+  background-color: #fff;
+  color: #333;
 }
 
-table {
-  margin-top: 20px;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-th, td {
-  border: 1px solid #333;
-  padding: 8px;
+.container {
   text-align: center;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.input-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+input {
+  width: 200px;
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid #ccc;
+  border-radius: 12px;
+  font-size: 1rem;
+  outline: none;
+  text-align: center;
+}
+
+input:focus {
+  border-color: #666;
+}
+
+button {
+  background-color: #333;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem 1.6rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+button:hover {
+  background-color: #555;
+}
+
+.resultado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.8rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+/* Blocos das cores */
+.item {
+  border-radius: 12px;
+  padding: 1rem 0;
+  font-weight: bold;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Cores */
+.verde {
+  background-color: #2e8b57;
+  color: #fff;
+}
+
+.rosa {
+  background-color: #ff69b4;
+  color: #fff;
+}
+
+.amarelo {
+  background-color: #ffd700;
+  color: #333;
+}
+
+.azul {
+  background-color: #1e90ff;
+  color: #fff;
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .input-group {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  input {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  button {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .resultado {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .item {
+    font-size: 0.95rem;
+  }
 }
