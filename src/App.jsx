@@ -52,10 +52,10 @@ function App() {
     return embaralharArray(listaCores).slice(0, totalPessoas);
   };
 
-  // --- Cor do texto ---
+  // --- Cor do texto (ajustada) ---
   const corTexto = cor => {
-    const claras = ["Amarelo", "Rosa", "Branco"];
-    return claras.includes(cor) ? "#000" : "#fff";
+    const escuras = ["Verde", "Azul", "Azul Marinho"];
+    return escuras.includes(cor) ? "#fff" : "#000";
   };
 
   // --- Contar cores ---
@@ -79,7 +79,7 @@ function App() {
     setDados(atualizados);
   };
 
-  // --- Sorteio por gênero (corrigido e equilibrado) ---
+  // --- Sorteio por gênero (mantendo regras) ---
   const sortearPorGenero = () => {
     if (dados.length === 0) return alert("Carregue a lista primeiro!");
 
@@ -92,31 +92,11 @@ function App() {
     const homensFinal = homens.map((p, i) => ({ ...p, cor: coresH[i] }));
     const mulheresFinal = mulheres.map((p, i) => ({ ...p, cor: coresF[i] }));
 
-    const combinado = [...homensFinal, ...mulheresFinal];
+    const combinado = embaralharArray([...homensFinal, ...mulheresFinal]).map(
+      (p, i) => ({ ...p, numero: i + 1 })
+    );
 
-    // --- Recalcula igualdade exata de cores no conjunto total ---
-    const total = combinado.length;
-    const qtdBase = Math.floor(total / cores.length);
-    let resto = total % cores.length;
-
-    const todasCores = [];
-    cores.forEach(cor => {
-      for (let i = 0; i < qtdBase; i++) todasCores.push(cor);
-      if (resto > 0) {
-        todasCores.push(cor);
-        resto--;
-      }
-    });
-
-    const coresFinais = embaralharArray(todasCores);
-
-    const final = combinado.map((p, i) => ({
-      ...p,
-      cor: coresFinais[i],
-      numero: i + 1
-    }));
-
-    setDados(final);
+    setDados(combinado);
   };
 
   // --- Baixar TXT ---
