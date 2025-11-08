@@ -272,6 +272,15 @@ const sortearPorGenero = () => {
             <strong>Amarelo:</strong> {contagem.Amarelo}
           </p>
 
+          <div className="resumo-cores">
+            {Object.entries(contagem).map(([cor, qtd]) => (
+              <div key={cor} className={`caixa-cor ${cor.toLowerCase()}`}>
+                <span>{cor}</span>
+                <strong>{qtd}</strong>
+              </div>
+            ))}
+          </div>
+          
           <table className="tabela">
             <thead>
               <tr>
