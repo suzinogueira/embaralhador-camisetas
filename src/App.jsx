@@ -6,6 +6,10 @@ import "./App.css";
 const cores = ["Verde", "Azul", "Amarelo", "Rosa"];
 const coresHomem = ["Verde", "Azul", "Amarelo"];
 
+const corTexto = cor => {
+  return "#000";
+};
+
 function App() {
   const [texto, setTexto] = useState("");
   const [dados, setDados] = useState([]);
@@ -79,31 +83,122 @@ function App() {
     setDados(atualizados);
   };
 
-  // --- Sorteio por gênero ---
-  const sortearPorGenero = () => {
-    if (dados.length === 0) return alert("Carregue a lista primeiro!");
+  // --- Sorteio por gênero (respeita "homens não recebem rosa" e equilibra globalmente) ---
+const sortearPorGenero = () => {
+  if (dados.length === 0) return alert("Carregue a lista primeiro!");
 
-    const homens = dados.filter(p => p.genero === "M");
-    const mulheres = dados.filter(p => p.genero === "F");
+  const homens = dados.filter(p => p.genero === "M");
+  const mulheres = dados.filter(p => p.genero === "F");
+  const total = homens.length + mulheres.length;
 
-    const coresHomensDistribuidas = distribuirCoresEquilibradas(homens.length, coresHomem);
-    const coresMulheresDistribuidas = distribuirCoresEquilibradas(mulheres.length, cores);
+  // 1) metas iniciais por cor (diferença max 1)
+  const base = Math.floor(total / cores.length);
+  let resto = total % cores.length;
+  const targets = { Verde: base, Azul: base, Amarelo: base, Rosa: base };
+  const coresOrdem = ["Verde", "Azul", "Amarelo", "Rosa"];
 
-    const resultado = [
-      ...homens.map((p, i) => ({
-        ...p,
-        cor: coresHomensDistribuidas[i],
-        numero: i + 1
-      })),
-      ...mulheres.map((p, i) => ({
-        ...p,
-        cor: coresMulheresDistribuidas[i],
-        numero: homens.length + i + 1
-      }))
-    ];
+  // Distribui o resto para as cores que têm mais "eligibilidade"
+  // (eligibilidade de Rosa = mulheres.length, dos outros = total)
+  const eligibilidade = coresOrdem.map(c => ({
+    cor: c,
+    cap: c === "Rosa" ? mulheres.length : total
+  }));
+  // ordenar por cap decrescente para distribuir o resto para as mais possíveis
+  eligibilidade.sort((a, b) => b.cap - a.cap);
 
-    setDados(embaralharArray(resultado)); // embaralha a lista final pra não agrupar por gênero
-  };
+  for (let i = 0; i < resto; i++) {
+    targets[eligibilidade[i % eligibilidade.length].cor]++;
+  }
+
+  // 2) garante que a soma de targets permitidos para homens seja >= homens.length
+  const allowedForMen = ["Verde", "Azul", "Amarelo"];
+  let somaPermitidaParaHomens = allowedForMen.reduce((s, c) => s + targets[c], 0);
+
+  if (somaPermitidaParaHomens < homens.length) {
+    // precisamos mover vagas de Rosa para as cores permitidas
+    let deficit = homens.length - somaPermitidaParaHomens;
+    // tira de Rosa (até onde houver) e distribui entre as permitidas, uma a uma
+    const tirarDeRosa = Math.min(deficit, targets.Rosa);
+    targets.Rosa -= tirarDeRosa;
+    deficit -= tirarDeRosa;
+    // se ainda houver deficit (Rosa ficou em 0), espalha entre permitidas
+    let idx = 0;
+    while (deficit > 0) {
+      const cor = allowedForMen[idx % allowedForMen.length];
+      targets[cor] += 1;
+      deficit--;
+      idx++;
+    }
+    somaPermitidaParaHomens = allowedForMen.reduce((s, c) => s + targets[c], 0);
+  }
+
+  // 3) aloca cores para homens respeitando targets (round-robin sem ultrapassar target)
+  const resultado = [];
+  const contagemTemp = { Rosa: 0, Verde: 0, Azul: 0, Amarelo: 0 };
+
+  // cria mapa de vagas restantes por cor (clonando targets)
+  const vagas = { ...targets };
+
+  // aloca homens primeiro — só nas cores permitidas
+  let iMen = 0;
+  const homensCopy = embaralharArray([...homens]); // embaralha homens pra não priorizar ordem
+  while (iMen < homensCopy.length) {
+    // tenta percorrer cores permitidas e achar uma com vaga
+    let assigned = false;
+    for (let j = 0; j < allowedForMen.length; j++) {
+      const cor = allowedForMen[(iMen + j) % allowedForMen.length];
+      if (vagas[cor] > 0) {
+        const pessoa = homensCopy[iMen];
+        resultado.push({ ...pessoa, cor });
+        vagas[cor]--;
+        contagemTemp[cor]++;
+        assigned = true;
+        break;
+      }
+    }
+    // se por algum motivo não conseguiu (não deveria), força atribuição na primeira permitida
+    if (!assigned) {
+      const cor = allowedForMen[0];
+      const pessoa = homensCopy[iMen];
+      resultado.push({ ...pessoa, cor });
+      vagas[cor] = Math.max(0, vagas[cor] - 1);
+      contagemTemp[cor]++;
+    }
+    iMen++;
+  }
+
+  // 4) aloca mulheres para completar as vagas restantes (inclui Rosa)
+  const mulheresCopy = embaralharArray([...mulheres]);
+  let iWomen = 0;
+  const coresList = coresOrdem; // Verde, Azul, Amarelo, Rosa (ordem para preencher)
+  while (iWomen < mulheresCopy.length) {
+    // encontra próxima cor com vaga
+    let found = false;
+    for (let j = 0; j < coresList.length; j++) {
+      const cor = coresList[(iWomen + j) % coresList.length];
+      if (vagas[cor] > 0) {
+        const pessoa = mulheresCopy[iWomen];
+        resultado.push({ ...pessoa, cor });
+        vagas[cor]--;
+        contagemTemp[cor]++;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      const cor = coresList[0];
+      const pessoa = mulheresCopy[iWomen];
+      resultado.push({ ...pessoa, cor });
+      contagemTemp[cor]++;
+    }
+    iWomen++;
+  }
+
+  // 5) numera e embaralha levemente para não ficar agrupado por gênero
+  const final = embaralharArray(resultado).map((p, idx) => ({ ...p, numero: idx + 1 }));
+
+  setDados(final);
+};
 
   // --- Baixar TXT ---
   const baixarTXT = () => {
