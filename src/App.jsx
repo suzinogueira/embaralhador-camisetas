@@ -4,7 +4,6 @@ import "./App.css";
 
 export default function App() {
   const [nomes, setNomes] = useState("");
-  const [generoAtivo, setGeneroAtivo] = useState(false);
   const [resultado, setResultado] = useState([]);
 
   const cores = ["Verde", "Rosa", "Amarelo", "Azul"];
@@ -22,51 +21,68 @@ export default function App() {
     Azul: "#ffffff",
   };
 
-  function sortearCores() {
-    const lista = nomes
-      .split("\n")
-      .map((n) => n.trim())
-      .filter((n) => n !== "");
+  // 🔹 Função genérica de sorteio
+  function sortear(lista) {
+    const sorteio = [];
+    let i = 0;
+    for (const pessoa of lista) {
+      const cor = cores[i % cores.length];
+      sorteio.push({ ...pessoa, cor });
+      i++;
+    }
+    return sorteio.sort(() => Math.random() - 0.5);
+  }
 
+  // 🔹 Sortear geral
+  function sortearCores() {
+    const lista = parseEntrada();
+    if (lista.length === 0) {
+      alert("Adicione nomes antes de sortear!");
+      return;
+    }
+    setResultado(sortear(lista));
+  }
+
+  // 🔹 Sortear por gênero (F e M separados)
+  function sortearPorGenero() {
+    const lista = parseEntrada();
     if (lista.length === 0) {
       alert("Adicione nomes antes de sortear!");
       return;
     }
 
-    const grupos = generoAtivo
-      ? {
-          masculino: lista.filter((n) =>
-            n.toLowerCase().includes("(m)")
-          ),
-          feminino: lista.filter((n) =>
-            n.toLowerCase().includes("(f)")
-          ),
-        }
-      : { todos: lista };
+    const feminino = lista.filter((p) => p.genero.toUpperCase() === "F");
+    const masculino = lista.filter((p) => p.genero.toUpperCase() === "M");
 
-    const novoResultado = [];
-
-    for (const grupo in grupos) {
-      const pessoas = grupos[grupo];
-      const sorteio = [];
-      let i = 0;
-
-      for (const pessoa of pessoas) {
-        sorteio.push({
-          nome: pessoa,
-          cor: cores[i % cores.length],
-        });
-        i++;
-      }
-
-      novoResultado.push(...sorteio.sort(() => Math.random() - 0.5));
-    }
-
-    setResultado(novoResultado);
+    const resultadoFinal = [...sortear(feminino), ...sortear(masculino)];
+    setResultado(resultadoFinal);
   }
 
+  // 🔹 Converte a entrada em objetos
+  function parseEntrada() {
+    return nomes
+      .split("\n")
+      .map((linha) => linha.trim())
+      .filter((linha) => linha !== "")
+      .map((linha) => {
+        const partes = linha.split("-").map((p) => p.trim());
+        return {
+          nome: partes[0] || "",
+          modelo: partes[1] || "",
+          tamanho: partes[2] || "",
+          genero: partes[3] || "",
+        };
+      });
+  }
+
+  // 🔹 TXT sem o gênero
   function baixarTXT() {
-    const texto = resultado.map((r) => `${r.nome}: ${r.cor}`).join("\n");
+    const texto = resultado
+      .map(
+        (r, i) =>
+          `${i + 1} - ${r.nome} - ${r.modelo} - ${r.tamanho} - ${r.cor}`
+      )
+      .join("\n");
     const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -75,8 +91,16 @@ export default function App() {
     link.click();
   }
 
+  // 🔹 Excel com colunas formatadas
   function baixarExcel() {
-    const ws = XLSX.utils.json_to_sheet(resultado);
+    const dados = resultado.map((r, i) => ({
+      Nº: i + 1,
+      Nome: r.nome,
+      Modelo: r.modelo,
+      Tamanho: r.tamanho,
+      Cor: r.cor,
+    }));
+    const ws = XLSX.utils.json_to_sheet(dados);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sorteio");
     XLSX.writeFile(wb, "sorteio.xlsx");
@@ -88,30 +112,26 @@ export default function App() {
 
       <textarea
         className="area-texto"
-        placeholder="Digite um nome por linha (adicione (M) ou (F) se quiser sortear por gênero)"
+        placeholder="Digite: nome - modelo - tamanho - gênero (F ou M)"
         value={nomes}
         onChange={(e) => setNomes(e.target.value)}
       />
 
       <div className="botoes">
-        <button onClick={sortearCores}>Sortear</button>
+        <button onClick={sortearCores}>Sortear Geral</button>
+        <button onClick={sortearPorGenero}>Sortear por Gênero</button>
         <button onClick={baixarTXT}>Baixar TXT</button>
         <button onClick={baixarExcel}>Baixar Excel</button>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={generoAtivo}
-            onChange={() => setGeneroAtivo(!generoAtivo)}
-          />
-          Sortear por gênero
-        </label>
       </div>
 
       {resultado.length > 0 && (
         <table className="tabela">
           <thead>
             <tr>
+              <th>№</th>
               <th>Nome</th>
+              <th>Modelo</th>
+              <th>Tamanho</th>
               <th>Cor</th>
             </tr>
           </thead>
@@ -124,7 +144,10 @@ export default function App() {
                   color: textoCor[r.cor],
                 }}
               >
+                <td>{i + 1}</td>
                 <td>{r.nome}</td>
+                <td>{r.modelo}</td>
+                <td>{r.tamanho}</td>
                 <td>{r.cor}</td>
               </tr>
             ))}
