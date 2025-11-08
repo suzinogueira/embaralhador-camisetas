@@ -35,27 +35,29 @@ function App() {
     return copy;
   };
 
-  // --- Distribuição equilibrada ---
+  // --- Distribuição equilibrada (corrigida) ---
   const distribuirCoresEquilibradas = (totalPessoas, coresDisponiveis) => {
-    const qtdPorCorBase = Math.floor(totalPessoas / coresDisponiveis.length);
+    const listaCores = [];
+    const qtdBase = Math.floor(totalPessoas / coresDisponiveis.length);
     let resto = totalPessoas % coresDisponiveis.length;
 
-    const listaCores = [];
     coresDisponiveis.forEach(cor => {
-      for (let i = 0; i < qtdPorCorBase; i++) listaCores.push(cor);
+      for (let i = 0; i < qtdBase; i++) listaCores.push(cor);
       if (resto > 0) {
         listaCores.push(cor);
         resto--;
       }
     });
 
+    // Garante que todas as cores fiquem próximas em quantidade
     return embaralharArray(listaCores).slice(0, totalPessoas);
   };
 
-  // --- Cor do texto ---
+  // --- Cor do texto (corrigido) ---
   const corTexto = cor => {
-    const claras = ["Amarelo", "Rosa", "Branco"];
-    return claras.includes(cor) ? "#000" : "#fff";
+    // Verde e Azul também devem ter texto escuro
+    const coresClaras = ["Amarelo", "Rosa", "Verde", "Azul", "Branco"];
+    return coresClaras.includes(cor) ? "#000" : "#fff";
   };
 
   // --- Sorteio geral ---
@@ -70,7 +72,7 @@ function App() {
     setDados(atualizados);
   };
 
-  // --- Sorteio por gênero (corrigido) ---
+  // --- Sorteio por gênero (mantendo regras + distribuição justa) ---
   const sortearPorGenero = () => {
     if (dados.length === 0) return alert("Carregue a lista primeiro!");
 
@@ -91,8 +93,9 @@ function App() {
       numero: i + 1
     }));
 
-    const combinado = [...homensFinal, ...mulheresFinal];
-    setDados(embaralharArray(combinado));
+    // Junta tudo e embaralha
+    const combinado = embaralharArray([...homensFinal, ...mulheresFinal]);
+    setDados(combinado);
   };
 
   // --- Baixar TXT ---
@@ -196,8 +199,8 @@ function App() {
                       backgroundColor: p.cor ? p.cor.toLowerCase() : "transparent",
                       color: corTexto(p.cor),
                       fontWeight: "bold",
-                      borderRadius: "6px",
-                      textAlign: "center"
+                      textAlign: "center",
+                      borderRadius: "6px"
                     }}
                   >
                     {p.cor}
