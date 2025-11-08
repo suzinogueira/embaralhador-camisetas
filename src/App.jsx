@@ -54,8 +54,8 @@ function App() {
 
   // --- Cor do texto (ajustada) ---
   const corTexto = cor => {
-    const escuras = ["Verde", "Azul", "Azul Marinho"];
-    return escuras.includes(cor) ? "#fff" : "#000";
+    const claras = ["Amarelo", "Rosa"];
+    return claras.includes(cor) ? "#000" : "#000"; // tudo preto pra evitar sumir no fundo
   };
 
   // --- Contar cores ---
@@ -79,36 +79,31 @@ function App() {
     setDados(atualizados);
   };
 
+  // --- Sorteio por gênero ---
+  const sortearPorGenero = () => {
+    if (dados.length === 0) return alert("Carregue a lista primeiro!");
 
-function sortearPorGenero(pessoas) {
-  const resultado = [];
-  const contagem = { Rosa: 0, Verde: 0, Azul: 0, Amarelo: 0 };
+    const homens = dados.filter(p => p.genero === "M");
+    const mulheres = dados.filter(p => p.genero === "F");
 
-  // separa por gênero
-  const homens = pessoas.filter(p => p.genero === "M");
-  const mulheres = pessoas.filter(p => p.genero === "F");
+    const coresHomensDistribuidas = distribuirCoresEquilibradas(homens.length, coresHomem);
+    const coresMulheresDistribuidas = distribuirCoresEquilibradas(mulheres.length, cores);
 
-  // sorteio equilibrado por gênero
-  const coresHomens = ["Verde", "Azul", "Amarelo"];
-  const coresMulheres = [...cores]; // todas as cores
+    const resultado = [
+      ...homens.map((p, i) => ({
+        ...p,
+        cor: coresHomensDistribuidas[i],
+        numero: i + 1
+      })),
+      ...mulheres.map((p, i) => ({
+        ...p,
+        cor: coresMulheresDistribuidas[i],
+        numero: homens.length + i + 1
+      }))
+    ];
 
-  // função para distribuir cores de forma equilibrada
-  const distribuir = (grupo, opcoes) => {
-    let i = 0;
-    grupo.forEach(pessoa => {
-      const cor = opcoes[i % opcoes.length];
-      resultado.push({ ...pessoa, cor });
-      contagem[cor]++;
-      i++;
-    });
+    setDados(embaralharArray(resultado)); // embaralha a lista final pra não agrupar por gênero
   };
-
-  distribuir(homens, coresHomens);
-  distribuir(mulheres, coresMulheres);
-
-  return { resultado, contagem };
-}
-
 
   // --- Baixar TXT ---
   const baixarTXT = () => {
@@ -175,11 +170,11 @@ function sortearPorGenero(pessoas) {
       {dados.length > 0 && (
         <>
           <p>
-            <strong>Total:</strong> {dados.length} pessoas |
-            <strong> Rosa:</strong> {contagem.Rosa} |
-            <strong> Verde:</strong> {contagem.Verde} |
-            <strong> Azul:</strong> {contagem.Azul} |
-            <strong> Amarelo:</strong> {contagem.Amarelo}
+            <strong>Total:</strong> {dados.length} pessoas |{" "}
+            <strong>Rosa:</strong> {contagem.Rosa} |{" "}
+            <strong>Verde:</strong> {contagem.Verde} |{" "}
+            <strong>Azul:</strong> {contagem.Azul} |{" "}
+            <strong>Amarelo:</strong> {contagem.Amarelo}
           </p>
 
           <table className="tabela">
